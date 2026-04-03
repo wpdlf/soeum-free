@@ -48,6 +48,7 @@ sensor_data_exam.json
 
 # Claude Code
 CLAUDE.md
+.bkit/
 
 # Root reference/test files
 /개방자치단체코드_영업상태코드.xlsx
