@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import date
 
 from app.repositories.region_repo import RegionRepository
 from app.repositories.construction_repo import ConstructionRepository
@@ -40,11 +41,13 @@ class RegionService:
         noise_repo: NoiseRepository,
         construction_repo: ConstructionRepository,
         real_estate_repo: RealEstateRepository,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> RegionDetailResponse | None:
         """Get detailed region info with noise summary, construction, and
-        real estate data. Cache key: region:detail:{id}, TTL 900 (15min)."""
+        real estate data."""
 
-        cache_key = f"region:detail:{region_id}"
+        cache_key = f"region:detail:{region_id}:{date_from}:{date_to}"
 
         async def _fetch() -> str:
             region = await self._repo.get_by_id(region_id)
@@ -71,10 +74,12 @@ class RegionService:
                     period_end=noise_summary.period_end,
                 )
 
-            # Construction
-            construction_count = await construction_repo.count_by_region(region_id)
+            # Construction (filter by date range if provided)
+            construction_count = await construction_repo.count_by_region(
+                region_id, date_from=date_from, date_to=date_to
+            )
             active_constructions = await construction_repo.get_active_by_region(
-                region_id
+                region_id, date_from=date_from, date_to=date_to
             )
             active_resp = [
                 ConstructionResponse(
@@ -96,9 +101,9 @@ class RegionService:
                 for c in active_constructions
             ]
 
-            # Real estate summaries
+            # Real estate summaries (filter by period)
             re_summaries = await real_estate_repo.get_summaries_by_region(
-                region_id
+                region_id, date_from=date_from, date_to=date_to
             )
             re_resp = [
                 RealEstateSummaryResponse(

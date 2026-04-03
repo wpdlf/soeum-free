@@ -74,13 +74,19 @@ class RealEstateRepository:
         return rows, total
 
     async def get_summaries_by_region(
-        self, region_id: int
+        self,
+        region_id: int,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> list[RealEstateSummary]:
-        result = await self.db.execute(
-            select(RealEstateSummary).where(
-                RealEstateSummary.region_id == region_id
-            )
+        stmt = select(RealEstateSummary).where(
+            RealEstateSummary.region_id == region_id
         )
+        if date_from:
+            stmt = stmt.where(RealEstateSummary.period_end >= date_from)
+        if date_to:
+            stmt = stmt.where(RealEstateSummary.period_start <= date_to)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def bulk_upsert_trades(self, records: list[dict]) -> int:

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { MapProvider, useMapContext } from '@/contexts/MapContext';
 import { KakaoMap } from '@/components/map/KakaoMap';
 import { NoisePolygonLayer } from '@/components/map/NoisePolygonLayer';
-import { ConstructionMarkerLayer } from '@/components/map/ConstructionMarkerLayer';
+
 import { ConstructionDBMarkerLayer } from '@/components/map/ConstructionDBMarkerLayer';
 import { api } from '@/lib/api';
 import { getDefaultPeriod } from '@/lib/date-utils';
@@ -283,7 +283,7 @@ function MainContent() {
   useEffect(() => {
     if (selectedRegionId == null) { setRegionDetail(null); return; }
     setIsLoading(true);
-    api.regions.detail(selectedRegionId)
+    api.regions.detail(selectedRegionId, { from: period.from, to: period.to })
       .then(setRegionDetail)
       .catch(() => setRegionDetail(null))
       .finally(() => setIsLoading(false));
@@ -331,12 +331,11 @@ function MainContent() {
       <div style={{ flex: 1, position: 'relative', backgroundColor: 'var(--bg-map)' }}>
         <KakaoMap />
         <NoisePolygonLayer />
-        <ConstructionMarkerLayer />
         <ConstructionDBMarkerLayer />
 
         {/* Legend overlay */}
         <div style={{
-          position: 'absolute', bottom: 16, right: 16, zIndex: 10,
+          position: 'fixed', bottom: 16, right: 16, zIndex: 10,
           backgroundColor: 'var(--legend-bg)', borderRadius: 10,
           border: '1px solid var(--border-color)', padding: 12, boxShadow: 'var(--shadow)',
         }}>

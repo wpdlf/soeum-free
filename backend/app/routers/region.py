@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as aioredis
@@ -47,11 +49,14 @@ async def search_regions(
 @router.get("/{region_id}")
 async def get_region_detail(
     region_id: int,
+    date_from: date | None = Query(None, alias="from"),
+    date_to: date | None = Query(None, alias="to"),
     service: RegionService = Depends(get_region_service),
     repos: dict = Depends(get_repos),
 ):
     result = await service.get_region_detail(
-        region_id, repos["noise"], repos["construction"], repos["real_estate"]
+        region_id, repos["noise"], repos["construction"], repos["real_estate"],
+        date_from=date_from, date_to=date_to,
     )
     if result is None:
         raise HTTPException(

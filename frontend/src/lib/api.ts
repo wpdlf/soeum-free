@@ -46,8 +46,10 @@ export const api = {
     list: (): Promise<Region[]> =>
       fetchApi(`${API_BASE}/api/v1/regions`),
 
-    detail: (id: number): Promise<RegionDetail> =>
-      fetchApi(`${API_BASE}/api/v1/regions/${id}`),
+    detail: (id: number, params?: { from?: string; to?: string }): Promise<RegionDetail> => {
+      const qs = params ? `?${toQueryString(params)}` : '';
+      return fetchApi(`${API_BASE}/api/v1/regions/${id}${qs}`);
+    },
 
     search: (q: string): Promise<{ items: Region[]; query: string }> =>
       fetchApi(`${API_BASE}/api/v1/regions/search?q=${encodeURIComponent(q)}`),

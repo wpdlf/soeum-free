@@ -79,22 +79,38 @@ class ConstructionRepository:
         return rows, total
 
     async def get_active_by_region(
-        self, region_id: int
+        self,
+        region_id: int,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> list[ConstructionPermit]:
-        result = await self.db.execute(
+        stmt = (
             select(ConstructionPermit)
             .where(ConstructionPermit.region_id == region_id)
             .where(ConstructionPermit.status != "completed")
-            .order_by(ConstructionPermit.permit_date.desc())
         )
+        if date_from:
+            stmt = stmt.where(ConstructionPermit.start_date >= date_from)
+        if date_to:
+            stmt = stmt.where(ConstructionPermit.start_date <= date_to)
+        stmt = stmt.order_by(ConstructionPermit.permit_date.desc())
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def count_by_region(self, region_id: int) -> int:
-        result = await self.db.execute(
-            select(func.count(ConstructionPermit.id)).where(
-                ConstructionPermit.region_id == region_id
-            )
+    async def count_by_region(
+        self,
+        region_id: int,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> int:
+        stmt = select(func.count(ConstructionPermit.id)).where(
+            ConstructionPermit.region_id == region_id
         )
+        if date_from:
+            stmt = stmt.where(ConstructionPermit.start_date >= date_from)
+        if date_to:
+            stmt = stmt.where(ConstructionPermit.start_date <= date_to)
+        result = await self.db.execute(stmt)
         return result.scalar() or 0
 
     async def bulk_upsert(self, records: list[dict]) -> int:
