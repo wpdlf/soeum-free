@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Node.js
+node_modules/
+.pnpm-store/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Database
+mysql_data/
+
+# Misc
+*.log
+*.tmp
+coverage/
+.nyc_output/
+
+# Legacy demo files (contain hardcoded API keys)
+secret.json
+sensor_data_exam.json
+
+# Claude Code
+CLAUDE.md
+
+# Root reference/test files
+/개방자치단체코드_영업상태코드.xlsx
+/app.py
+/app.js
+/fix_json.py
+/json_test.py
+/mkpretty.py
+/plus.py
+/seoulmap.py
+/soumdata.py
+/test.py
+/testtest.py

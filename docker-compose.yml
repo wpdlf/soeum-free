@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: soeum-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soeum-network
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: soeum-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soeum-network
+
+  backend:
+    build: ./backend
+    container_name: soeum-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATA_GO_KR_API_KEY: ${DATA_GO_KR_API_KEY}
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
+      SAFEMAP_API_KEY: ${SAFEMAP_API_KEY}
+      SAFETYDATA_API_KEY: ${SAFETYDATA_API_KEY}
+      DUST_EMISSION_API_KEY: ${DUST_EMISSION_API_KEY}
+      DEBUG: ${DEBUG:-true}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - soeum-network
+
+  frontend:
+    build: ./frontend
+    container_name: soeum-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_KAKAO_MAP_API_KEY: ${KAKAO_MAP_API_KEY}
+      NEXT_PUBLIC_SAFEMAP_API_KEY: ${SAFEMAP_API_KEY}
+      WATCHPACK_POLLING: "true"
+    networks:
+      - soeum-network
+
+networks:
+  soeum-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
