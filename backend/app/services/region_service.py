@@ -106,6 +106,7 @@ class RegionService:
                     district_name=region.district_name,
                     dong_name=region.dong_name,
                     trade_type=s.trade_type,
+                    building_type=s.building_type,
                     avg_price=s.avg_price,
                     min_price=s.min_price,
                     max_price=s.max_price,

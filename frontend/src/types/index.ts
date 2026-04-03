@@ -52,6 +52,7 @@ export interface RealEstateSummary {
   districtName: string;
   dongName: string;
   tradeType: TradeType;
+  buildingType: string | null;
   avgPrice: number;
   minPrice: number;
   maxPrice: number;

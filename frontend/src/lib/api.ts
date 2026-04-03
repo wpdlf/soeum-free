@@ -7,7 +7,10 @@ import type {
   PaginatedResponse,
 } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const isServer = typeof window === 'undefined';
+const API_BASE = isServer
+  ? (process.env.API_URL_INTERNAL || 'http://backend:8000')
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
 /** snake_case → camelCase 변환 (재귀) */
 function toCamel(str: string): string {

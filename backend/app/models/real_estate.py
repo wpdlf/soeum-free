@@ -70,6 +70,7 @@ class RealEstateSummary(Base):
         BigInteger, ForeignKey("regions.id"), nullable=False, index=True
     )
     trade_type = Column(String(20), nullable=False)
+    building_type = Column(String(20), nullable=True, comment="apartment/multiplex/officetel")
     avg_price = Column(Integer, nullable=True)
     min_price = Column(Integer, nullable=True)
     max_price = Column(Integer, nullable=True)
@@ -87,7 +88,7 @@ class RealEstateSummary(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "region_id", "trade_type", name="uk_real_estate_summary_region_type"
+            "region_id", "trade_type", "building_type", name="uk_re_summary_region_type_bldg"
         ),
     )
 

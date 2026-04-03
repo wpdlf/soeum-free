@@ -4,7 +4,7 @@ interface Props {
 }
 
 export function NaverLinkButton({ districtName, dongName }: Props) {
-  const url = `https://land.naver.com/search/result.naver?query=${encodeURIComponent(districtName + ' ' + dongName)}`;
+  const url = `https://new.land.naver.com/search?query=${encodeURIComponent(districtName + ' ' + dongName)}`;
 
   return (
     <a

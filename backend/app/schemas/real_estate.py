@@ -29,6 +29,7 @@ class RealEstateSummaryResponse(BaseModel):
     district_name: str
     dong_name: str
     trade_type: str
+    building_type: str | None = None
     avg_price: int | None
     min_price: int | None
     max_price: int | None

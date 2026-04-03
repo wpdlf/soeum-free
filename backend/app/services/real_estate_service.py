@@ -131,7 +131,7 @@ class RealEstateService:
 
         async def _fetch() -> str:
             naver_url = (
-                f"https://land.naver.com/search/result?query={district}+{dong}"
+                f"https://new.land.naver.com/search?query={district}+{dong}"
             )
             resp = NaverLinkResponse(
                 district_name=district,

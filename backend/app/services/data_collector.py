@@ -1318,7 +1318,7 @@ class DataCollector:
         df["monthly_rent"] = df["monthly_rent"].fillna(0)
 
         summary = (
-            df.groupby(["region_id", "trade_type"])
+            df.groupby(["region_id", "trade_type", "building_type"])
             .agg(
                 avg_price=("price", "mean"),
                 min_price=("price", "min"),
@@ -1355,7 +1355,7 @@ class DataCollector:
                     break
 
             naver_link = (
-                f"https://land.naver.com/search/result"
+                f"https://new.land.naver.com/search"
                 f"?query={district}+{dong}"
             )
 
@@ -1363,6 +1363,7 @@ class DataCollector:
                 {
                     "region_id": region_id,
                     "trade_type": row["trade_type"],
+                    "building_type": row["building_type"],
                     "avg_price": int(row["avg_price"]),
                     "min_price": int(row["min_price"]),
                     "max_price": int(row["max_price"]),

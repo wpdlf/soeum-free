@@ -196,60 +196,65 @@ function InfoPanel({ detail, loading }: { detail: RegionDetail | null; loading: 
           </div>
         )}
 
-        {tab === 'realEstate' && (
+        {tab === 'realEstate' && (() => {
+          const formatPrice = (v: number) =>
+            v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${v.toLocaleString()}만`;
+          const BLDG_LABELS: Record<string, string> = { apartment: '아파트', multiplex: '연립다세대', officetel: '오피스텔' };
+          const BLDG_ORDER = ['apartment', 'multiplex', 'officetel'];
+          const grouped = BLDG_ORDER
+            .map(bt => ({ bt, label: BLDG_LABELS[bt], items: detail.realEstate.filter(re => re.buildingType === bt) }))
+            .filter(g => g.items.length > 0);
+
+          return (
           <div>
             {detail.realEstate.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>데이터 없음</p>}
-            {detail.realEstate.map((re, i) => {
-              const formatPrice = (v: number) =>
-                v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${v.toLocaleString()}만`;
-              const label = re.tradeType === 'sale' ? '매매' : re.tradeType === 'jeonse' ? '전세' : '월세';
-              const labelColor = re.tradeType === 'jeonse' ? '#2563eb' : re.tradeType === 'monthly' ? '#ea580c' : '#15803d';
-
-              return (
-                <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{
-                      display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600,
-                      backgroundColor: `${labelColor}15`, color: labelColor,
-                    }}>
-                      {label}
-                    </span>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>최근 {re.tradeCount}건 거래</span>
-                  </div>
-                  {re.tradeType === 'monthly' ? (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 보증금</span>
-                        <span style={{ fontSize: 18, fontWeight: 700 }}>{formatPrice(re.avgPrice)}</span>
+            {grouped.map(group => (
+              <div key={group.bt} style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', paddingBottom: 6, borderBottom: '2px solid var(--border-color)' }}>
+                  {group.label}
+                </p>
+                {group.items.map((re, i) => {
+                  const label = re.tradeType === 'sale' ? '매매' : re.tradeType === 'jeonse' ? '전세' : '월세';
+                  const labelColor = re.tradeType === 'jeonse' ? '#2563eb' : re.tradeType === 'monthly' ? '#ea580c' : '#15803d';
+                  return (
+                    <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{
+                          display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600,
+                          backgroundColor: `${labelColor}15`, color: labelColor,
+                        }}>{label}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>최근 {re.tradeCount}건</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 월세</span>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#ea580c' }}>
-                          {re.avgMonthlyRent != null && re.avgMonthlyRent > 0 ? `${re.avgMonthlyRent.toLocaleString()}만` : '-'}
-                        </span>
-                      </div>
+                      {re.tradeType === 'monthly' ? (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 보증금</span>
+                            <span style={{ fontSize: 16, fontWeight: 700 }}>{formatPrice(re.avgPrice)}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 월세</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: '#ea580c' }}>
+                              {re.avgMonthlyRent != null && re.avgMonthlyRent > 0 ? `${re.avgMonthlyRent.toLocaleString()}만` : '-'}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 보증금</span>
+                          <span style={{ fontSize: 16, fontWeight: 700 }}>{formatPrice(re.avgPrice)}</span>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-tertiary)' }}>
                         <span>최저 <b style={{ color: 'var(--text-secondary)' }}>{formatPrice(re.minPrice)}</b></span>
                         <span>최고 <b style={{ color: 'var(--text-secondary)' }}>{formatPrice(re.maxPrice)}</b></span>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)', minWidth: 70 }}>평균 보증금</span>
-                        <span style={{ fontSize: 18, fontWeight: 700 }}>{formatPrice(re.avgPrice)}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-tertiary)' }}>
-                        <span>최저 <b style={{ color: 'var(--text-secondary)' }}>{formatPrice(re.minPrice)}</b></span>
-                        <span>최고 <b style={{ color: 'var(--text-secondary)' }}>{formatPrice(re.maxPrice)}</b></span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
             <a
-              href={`https://land.naver.com/search/result.naver?query=${encodeURIComponent(detail.region.districtName + ' ' + detail.region.dongName)}`}
+              href={`https://new.land.naver.com/search?ms=${detail.region.latitude},${detail.region.longitude},16&a=APT:ABYG:JGC:PRE&e=RETAIL`}
               target="_blank" rel="noopener noreferrer"
               style={{
                 display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 0',
@@ -260,7 +265,8 @@ function InfoPanel({ detail, loading }: { detail: RegionDetail | null; loading: 
               네이버 부동산에서 매물 보기
             </a>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

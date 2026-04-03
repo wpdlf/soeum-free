@@ -1,14 +1,19 @@
 import { api } from '@/lib/api';
-import { Card } from '@/components/ui/Card';
-import { NoiseLevelBadge } from '@/components/ui/NoiseLevelBadge';
-import { EmptyState } from '@/components/ui/EmptyState';
 import Link from 'next/link';
-
-// NOTE: This is a Server Component (no 'use client')
-// It fetches data on the server side
 
 interface Props {
   params: Promise<{ id: string }>;
+}
+
+const NOISE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  quiet: { bg: '#dcfce7', color: '#15803d', label: '조용' },
+  normal: { bg: '#fef9c3', color: '#a16207', label: '보통' },
+  loud: { bg: '#fee2e2', color: '#b91c1c', label: '시끄러움' },
+  very_loud: { bg: '#e5e5e5', color: '#171717', label: '매우 시끄러움' },
+};
+
+function formatPrice(v: number) {
+  return v >= 10000 ? `${(v / 10000).toFixed(1)}억` : `${v.toLocaleString()}만`;
 }
 
 export default async function RegionDetailPage({ params }: Props) {
@@ -19,127 +24,182 @@ export default async function RegionDetailPage({ params }: Props) {
     detail = await api.regions.detail(Number(id));
   } catch {
     return (
-      <main className="p-6">
-        <EmptyState message="지역 정보를 불러올 수 없습니다" />
+      <main style={{ padding: 40, textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 16 }}>지역 정보를 불러올 수 없습니다</p>
+        <a href="/" style={{ color: 'var(--link-color)', fontSize: 14, marginTop: 12, display: 'inline-block' }}>← 메인으로 돌아가기</a>
       </main>
     );
   }
 
   const { region, noise, constructionCount, activeConstructions, realEstate } = detail;
+  const noiseStyle = noise ? NOISE_STYLES[noise.noiseLevel] : null;
 
   return (
-    <main className="flex-1 overflow-y-auto p-4 lg:p-8 max-w-6xl mx-auto w-full">
+    <main style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', maxWidth: 960, margin: '0 auto', width: '100%' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-neutral-500 mb-4">
-        <Link href="/" className="hover:text-blue-600 transition-colors">메인</Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16 }}>
+        <a href="/" style={{ color: 'var(--link-color)', textDecoration: 'none' }}>메인</a>
         <span>/</span>
         <span>{region.districtName}</span>
         <span>/</span>
-        <span className="text-neutral-900 font-medium">{region.dongName}</span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{region.dongName}</span>
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold">{region.dongName}</h1>
-        <span className="text-lg text-neutral-500">{region.districtName}</span>
-        {noise && <NoiseLevelBadge level={noise.noiseLevel} avgNoise={noise.avgNoise} size="lg" />}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{region.dongName}</h1>
+        <span style={{ fontSize: 16, color: 'var(--text-secondary)' }}>{region.districtName}</span>
+        {noiseStyle && (
+          <span style={{
+            padding: '4px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+            backgroundColor: noiseStyle.bg, color: noiseStyle.color,
+          }}>
+            {noise!.avgNoise}dB · {noiseStyle.label}
+          </span>
+        )}
       </div>
 
-      {/* 3-column grid on desktop, single column on mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Cards grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+
         {/* Noise card */}
-        <Card>
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
+        <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: 12, border: '1px solid var(--border-color)', padding: 20 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block' }} />
             소음 정보
           </h2>
           {noise ? (
             <div>
-              <p className="text-3xl font-bold tabular-nums">{noise.avgNoise}dB</p>
-              <p className="text-sm text-neutral-500 mt-1">측정 건수: {noise.sampleCount.toLocaleString()}건</p>
-              <p className="text-sm text-neutral-500">기간: {noise.periodStart} ~ {noise.periodEnd}</p>
-              {/* Noise bar */}
-              <div className="mt-3 h-2 rounded-full bg-neutral-200 overflow-hidden">
-                <div className="h-full rounded-full" style={{
+              <p style={{ fontSize: 32, fontWeight: 800, margin: '0 0 8px', color: 'var(--text-primary)' }}>{noise.avgNoise}dB</p>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                <p style={{ margin: 0 }}>측정 건수: <b style={{ color: 'var(--text-primary)' }}>{noise.sampleCount.toLocaleString()}건</b></p>
+                <p style={{ margin: 0 }}>기간: {noise.periodStart} ~ {noise.periodEnd}</p>
+              </div>
+              <div style={{ marginTop: 14, height: 8, backgroundColor: 'var(--bg-tertiary)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4,
                   width: `${Math.min((noise.avgNoise / 80) * 100, 100)}%`,
                   backgroundColor: noise.noiseColor === 'green' ? '#22c55e' : noise.noiseColor === 'yellow' ? '#eab308' : noise.noiseColor === 'red' ? '#ef4444' : '#171717',
                 }} />
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                <span>0dB</span><span>40</span><span>60</span><span>80dB</span>
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-neutral-400">데이터 없음</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>데이터 없음</p>
           )}
-        </Card>
+        </div>
 
         {/* Construction card */}
-        <Card>
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
+        <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: 12, border: '1px solid var(--border-color)', padding: 20 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block' }} />
             공사장 현황
           </h2>
-          <p className="text-3xl font-bold tabular-nums">{constructionCount}건</p>
-          <p className="text-sm text-neutral-500 mt-1">진행 중: {activeConstructions.length}건</p>
+          <p style={{ fontSize: 32, fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{constructionCount}건</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px' }}>진행 중: <b style={{ color: 'var(--text-primary)' }}>{activeConstructions.length}건</b></p>
           {activeConstructions.length > 0 && (
-            <div className="mt-3 space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {activeConstructions.slice(0, 5).map(c => (
-                <div key={c.id} className="p-2 bg-neutral-50 rounded-lg text-xs">
-                  <p className="font-medium">{c.projectName}</p>
-                  <p className="text-neutral-400 mt-0.5">{c.address}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className={`px-1.5 py-0.5 rounded text-xs ${
-                      c.status === 'in_progress' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {c.status === 'in_progress' ? '진행중' : '허가'}
-                    </span>
-                  </div>
+                <div key={c.id} style={{ padding: 10, backgroundColor: 'var(--bg-secondary)', borderRadius: 8, fontSize: 13 }}>
+                  <p style={{ fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>{c.projectName}</p>
+                  <p style={{ color: 'var(--text-secondary)', margin: '4px 0 6px', fontSize: 12 }}>{c.address}</p>
+                  <span style={{
+                    display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                    backgroundColor: c.status === 'in_progress' ? '#fee2e2' : '#fef3c7',
+                    color: c.status === 'in_progress' ? '#b91c1c' : '#a16207',
+                  }}>
+                    {c.status === 'in_progress' ? '진행중' : '허가'}
+                  </span>
                 </div>
               ))}
             </div>
           )}
-        </Card>
+        </div>
 
         {/* Real estate card */}
-        <Card>
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-violet-500" />
-            부동산 실거래가
+        <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: 12, border: '1px solid var(--border-color)', padding: 20 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#8b5cf6', display: 'inline-block' }} />
+            부동산 전월세
           </h2>
-          {realEstate.length > 0 ? (
-            <div className="space-y-3">
-              {realEstate.map((re, i) => (
-                <div key={i} className="flex justify-between items-center py-1 border-b border-neutral-100 last:border-0">
-                  <span className="text-sm font-medium">
-                    {re.tradeType === 'sale' ? '매매' : re.tradeType === 'jeonse' ? '전세' : '월세'}
-                  </span>
-                  <div className="text-right">
-                    <span className="text-sm font-bold tabular-nums">
-                      {re.avgPrice >= 10000 ? `${(re.avgPrice / 10000).toFixed(1)}억` : `${re.avgPrice.toLocaleString()}만`}
-                    </span>
-                    <span className="text-xs text-neutral-400 ml-1">({re.tradeCount}건)</span>
+          {(() => {
+            const BLDG_LABELS: Record<string, string> = { apartment: '아파트', multiplex: '연립다세대', officetel: '오피스텔' };
+            const BLDG_ORDER = ['apartment', 'multiplex', 'officetel'];
+            const grouped = BLDG_ORDER
+              .map(bt => ({ bt, label: BLDG_LABELS[bt], items: realEstate.filter(re => re.buildingType === bt) }))
+              .filter(g => g.items.length > 0);
+
+            if (grouped.length === 0) return <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>데이터 없음</p>;
+
+            return (
+              <div>
+                {grouped.map(group => (
+                  <div key={group.bt} style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', paddingBottom: 6, borderBottom: '2px solid var(--border-color)' }}>
+                      {group.label}
+                    </p>
+                    {group.items.map((re, i) => {
+                      const label = re.tradeType === 'sale' ? '매매' : re.tradeType === 'jeonse' ? '전세' : '월세';
+                      const labelColor = re.tradeType === 'jeonse' ? '#2563eb' : re.tradeType === 'monthly' ? '#ea580c' : '#15803d';
+                      return (
+                        <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <span style={{
+                              padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600,
+                              backgroundColor: `${labelColor}15`, color: labelColor,
+                            }}>{label}</span>
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>최근 {re.tradeCount}건</span>
+                          </div>
+                          {re.tradeType === 'monthly' ? (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 70 }}>평균 보증금</span>
+                                <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{formatPrice(re.avgPrice)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 70 }}>평균 월세</span>
+                                <span style={{ fontSize: 16, fontWeight: 700, color: '#ea580c' }}>
+                                  {re.avgMonthlyRent != null && re.avgMonthlyRent > 0 ? `${re.avgMonthlyRent.toLocaleString()}만` : '-'}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                              <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 70 }}>평균 보증금</span>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{formatPrice(re.avgPrice)}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)' }}>
+                            <span>최저 <b style={{ color: 'var(--text-primary)' }}>{formatPrice(re.minPrice)}</b></span>
+                            <span>최고 <b style={{ color: 'var(--text-primary)' }}>{formatPrice(re.maxPrice)}</b></span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
-              {/* Naver link */}
-              <a
-                href={`https://land.naver.com/search/result.naver?query=${encodeURIComponent(region.districtName + ' ' + region.dongName)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 text-sm font-medium text-green-700 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
-              >
-                네이버 부동산에서 매물 보기
-              </a>
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-400">데이터 없음</p>
-          )}
-        </Card>
+                ))}
+                <a
+                  href={`https://new.land.naver.com/search?ms=${region.latitude},${region.longitude},16&a=APT:ABYG:JGC:PRE&e=RETAIL`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: 'block', textAlign: 'center', marginTop: 12, padding: '10px 0',
+                    fontSize: 14, fontWeight: 500, color: '#15803d', border: '1px solid #bbf7d0',
+                    borderRadius: 8, textDecoration: 'none',
+                  }}
+                >
+                  네이버 부동산에서 매물 보기
+                </a>
+              </div>
+            );
+          })()}
+        </div>
       </div>
 
       {/* Back link */}
-      <div className="mt-6">
-        <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
-          ← 메인으로 돌아가기
-        </Link>
+      <div style={{ marginTop: 24 }}>
+        <a href="/" style={{ fontSize: 14, color: 'var(--link-color)', textDecoration: 'none' }}>← 메인으로 돌아가기</a>
       </div>
     </main>
   );
