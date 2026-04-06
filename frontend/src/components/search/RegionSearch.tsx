@@ -28,25 +28,33 @@ export function RegionSearch({ onSelect }: Props) {
   const items = data?.items ?? [];
 
   return (
-    <div ref={wrapperRef} className="relative">
-      <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+    <div ref={wrapperRef} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 14 }}>
+          &#128269;
+        </span>
         <input
           type="text"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => query && setIsOpen(true)}
           placeholder="지역 검색 (예: 강남구 역삼동)"
-          className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 pl-10 text-sm placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          style={{
+            width: '100%', padding: '10px 12px 10px 36px', border: '1px solid var(--input-border)',
+            borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box',
+            backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)',
+          }}
         />
       </div>
 
       {isOpen && query && (
-        <div className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-neutral-200 bg-white shadow-lg z-50 max-h-60 overflow-y-auto">
-          {isLoading && <p className="px-4 py-3 text-sm text-neutral-400">검색 중...</p>}
-          {!isLoading && items.length === 0 && <p className="px-4 py-3 text-sm text-neutral-400">결과 없음</p>}
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+          border: '1px solid var(--border-color)', borderRadius: 8, backgroundColor: 'var(--card-bg)',
+          boxShadow: 'var(--shadow)', zIndex: 50, maxHeight: 240, overflowY: 'auto',
+        }}>
+          {isLoading && <p style={{ padding: '10px 14px', fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>검색 중...</p>}
+          {!isLoading && items.length === 0 && <p style={{ padding: '10px 14px', fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>결과 없음</p>}
           {items.map(region => (
             <button
               key={region.id}
@@ -55,10 +63,16 @@ export function RegionSearch({ onSelect }: Props) {
                 setQuery(`${region.districtName} ${region.dongName}`);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors flex justify-between"
+              style={{
+                display: 'flex', justifyContent: 'space-between', width: '100%',
+                padding: '10px 14px', border: 'none', backgroundColor: 'var(--card-bg)',
+                cursor: 'pointer', textAlign: 'left', fontSize: 14, color: 'var(--text-primary)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--card-bg)')}
             >
-              <span className="font-medium">{region.dongName}</span>
-              <span className="text-neutral-400">{region.districtName}</span>
+              <span style={{ fontWeight: 500 }}>{region.dongName}</span>
+              <span style={{ color: 'var(--text-muted)' }}>{region.districtName}</span>
             </button>
           ))}
         </div>
