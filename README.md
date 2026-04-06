@@ -5,10 +5,12 @@
 ## 주요 기능
 
 - **소음 지도** — 서울 425개 행정동의 소음 수준을 색상 폴리곤으로 시각화
-- **공사장 현황** — 진행 중인 대규모 공사장을 마커로 표시 + WMS 타일 오버레이
+- **공사장 현황** — 진행 중인 대규모 공사장을 마커로 표시
 - **전월세 정보** — 아파트/연립다세대/오피스텔 전월세 실거래가 요약
 - **지역 검색** — 동 이름으로 검색 시 해당 위치로 지도 이동
-- **지역 상세** — 소음/공사장/부동산 데이터를 탭으로 확인
+- **지역 상세** — 소음/공사장/부동산 데이터를 탭으로 확인, 공사장 목록 더보기 지원
+- **지역 비교** — 두 지역을 나란히 비교 (소음/공사장/부동산)
+- **기간 필터** — 3개월/6개월/12개월 단위로 조회 기간 선택
 - **다크 모드** — 라이트/다크 테마 전환 지원
 
 ## 기술 스택
@@ -27,11 +29,16 @@
 |---|---|---|
 | 소음 측정 | 서울시 S-DoT (IoT 센서) | 동별 평균 소음 수준 |
 | 대규모 공사장 | 행정안전부 공유플랫폼 (DSSP-IF-10684) | 공사장 마커 + 상세 정보 |
-| 건설공사 현황 | 행정안전부 생활안전지도 WMS (IF_0043) | 지도 위 공사장 타일 오버레이 |
+| 건설공사 현황 | 행정안전부 생활안전지도 (IF_0043) | 공사장 데이터 보완 (fallback) |
+| 건축허가 | 국토교통부 건축인허가 (ArchPmsService_v2) | 공사장 데이터 보완 (fallback) |
 | 비산먼지 공사장 | 행정안전부 비산먼지발생사업정보 | 진행 중인 공사장 수집 |
 | 아파트 전월세 | 국토교통부 아파트 전월세 실거래가 | 전세/월세 평균, 범위 |
 | 연립다세대 전월세 | 국토교통부 연립다세대 전월세 실거래가 | 전세/월세 평균, 범위 |
 | 오피스텔 전월세 | 국토교통부 오피스텔 전월세 실거래가 | 전세/월세 평균, 범위 |
+| 좌표 변환 | 카카오 로컬 API | 공사장 주소 → 좌표 지오코딩 |
+
+> 데이터 수집은 자동 스케줄러 없이 sync API를 수동 호출하는 방식입니다.
+> 수집된 데이터는 MySQL에 저장되고 Redis로 캐싱되어 사용자 요청 시 제공됩니다.
 
 ## 시작하기
 
@@ -105,39 +112,56 @@ soeum-free/
 │   │   ├── repositories/    # DB 접근 계층
 │   │   ├── routers/         # API 엔드포인트
 │   │   ├── schemas/         # Pydantic 스키마
-│   │   ├── services/        # 비즈니스 로직
+│   │   ├── services/        # 비즈니스 로직 (데이터 수집, 캐시)
 │   │   └── utils/           # 유틸리티
 │   ├── alembic/             # DB 마이그레이션
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── app/             # Next.js 페이지
-│   │   ├── components/      # React 컴포넌트
+│   │   ├── app/             # Next.js 페이지 (메인, 상세, 비교)
+│   │   ├── components/
+│   │   │   ├── layout/      # Header, 공통 레이아웃
+│   │   │   ├── map/         # 카카오맵, 소음 폴리곤, 공사장 마커
+│   │   │   ├── search/      # 지역 검색
+│   │   │   └── ui/          # Card, Badge, ConstructionList 등
 │   │   ├── contexts/        # Context (지도 상태)
 │   │   ├── hooks/           # Custom hooks
 │   │   ├── lib/             # API 클라이언트, 유틸
 │   │   └── types/           # TypeScript 타입
 │   ├── public/geo/          # 서울 행정동 GeoJSON
 │   └── Dockerfile
-├── db/init/                 # DB 초기 시드 데이터
+├── db/init/                 # DB 초기 시드 데이터 (75개 행정동)
 ├── docker-compose.yml
 └── .env.example
 ```
 
 ## API 엔드포인트
 
+### 조회 API
+
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/api/v1/regions` | 전체 지역 목록 |
 | GET | `/api/v1/regions/search?q=` | 지역 검색 |
 | GET | `/api/v1/regions/{id}` | 지역 상세 (소음+공사장+부동산) |
+| GET | `/api/v1/compare` | 두 지역 비교 |
+| GET | `/api/v1/noise` | 소음 데이터 목록 |
 | GET | `/api/v1/noise/map` | 소음 지도 데이터 |
+| GET | `/api/v1/construction` | 공사장 데이터 목록 |
 | GET | `/api/v1/construction/map` | 공사장 지도 데이터 |
+| GET | `/api/v1/real-estate` | 전월세 데이터 목록 |
+| GET | `/api/v1/real-estate/map` | 전월세 지도 데이터 |
+| GET | `/api/v1/real-estate/link` | 네이버 부동산 링크 |
+
+### 데이터 수집 API
+
+| Method | Path | 설명 |
+|---|---|---|
 | POST | `/api/v1/data/sync/noise` | 소음 데이터 수집 |
-| POST | `/api/v1/data/sync/construction` | 공사장 데이터 수집 |
+| POST | `/api/v1/data/sync/construction` | 공사장 데이터 수집 (3단계 fallback) |
 | POST | `/api/v1/data/sync/dust-emission` | 비산먼지 데이터 수집 |
-| POST | `/api/v1/data/sync/construction/geocode` | 공사장 좌표 변환 |
+| POST | `/api/v1/data/sync/construction/geocode` | 공사장 좌표 변환 (카카오) |
 | POST | `/api/v1/data/sync/real-estate` | 전월세 데이터 수집 |
 
 ## 라이선스
