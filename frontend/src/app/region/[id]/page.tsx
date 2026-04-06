@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { ConstructionList } from '@/components/ui/ConstructionList';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -100,21 +101,7 @@ export default async function RegionDetailPage({ params }: Props) {
           <p style={{ fontSize: 32, fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{constructionCount}건</p>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px' }}>진행 중: <b style={{ color: 'var(--text-primary)' }}>{activeConstructions.length}건</b></p>
           {activeConstructions.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {activeConstructions.slice(0, 5).map(c => (
-                <div key={c.id} style={{ padding: 10, backgroundColor: 'var(--bg-secondary)', borderRadius: 8, fontSize: 13 }}>
-                  <p style={{ fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>{c.projectName}</p>
-                  <p style={{ color: 'var(--text-secondary)', margin: '4px 0 6px', fontSize: 12 }}>{c.address}</p>
-                  <span style={{
-                    display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                    backgroundColor: c.status === 'in_progress' ? '#fee2e2' : '#fef3c7',
-                    color: c.status === 'in_progress' ? '#b91c1c' : '#a16207',
-                  }}>
-                    {c.status === 'in_progress' ? '진행중' : '허가'}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <ConstructionList items={activeConstructions} />
           )}
         </div>
 
